@@ -34,6 +34,7 @@ interface Cycle {
     minutesAmount: number;
     startDate: Date;
     interruptedDate?: Date;
+    finishedDate?: Date;
 }
 
 export function Home() {
@@ -52,20 +53,52 @@ export function Home() {
 
     const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId);
 
+    const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0;
+    const currentSeconds = activeCycle ? totalSeconds - amountsSecondsPassed : 0;
+
+    const minutesAmount = Math.floor(currentSeconds / 60);
+    const secondsAmount = currentSeconds % 60;
+
+    const minutes = String(minutesAmount).padStart(2, '0');
+    const seconds = String(secondsAmount).padStart(2, '0');
+
     useEffect(() => {
 
         let interval: number;
 
         if(activeCycle) {
-          interval = setInterval(() => {
-                setAmountsSecondsPassed(differenceInSeconds(new Date(), activeCycle.startDate))
+            interval = setInterval(() => {
+                const secondsDifference = differenceInSeconds(
+                    new Date(), 
+                    activeCycle.startDate
+                )
+
+                if (secondsDifference >= totalSeconds) {
+                    setCycles(
+                       state =>  state.map((cycle) => {
+                        if (cycle.id === activeCycleId) {
+                            return {
+                              ...cycle,
+                              finishedDate: new Date() }
+                        } else {
+                            return cycle;
+                        }
+                        }),
+                    )
+
+                    clearInterval(interval)
+                } else {
+                    setAmountsSecondsPassed(secondsDifference)
+                }
+
+                
             }, 1000)   
         }
 
         return () => {
             clearInterval(interval);
         }
-    }, [activeCycle])
+    }, [activeCycle, totalSeconds, activeCycleId])
     
 
     function handleCreateNewCycle(data: NewCycleFormData) {
@@ -86,8 +119,7 @@ export function Home() {
     }
 
     function handleInterruptCycle() {
-        setCycles(
-            cycles.map((cycle) => {
+        setCycles((state) => state.map((cycle) => {
             if (cycle.id === activeCycleId) {
                 return {
                   ...cycle,
@@ -102,14 +134,7 @@ export function Home() {
 
     
 
-    const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0;
-    const currentSeconds = activeCycle ? totalSeconds - amountsSecondsPassed : 0;
-
-    const minutesAmount = Math.floor(currentSeconds / 60);
-    const secondsAmount = currentSeconds % 60;
-
-    const minutes = String(minutesAmount).padStart(2, '0');
-    const seconds = String(secondsAmount).padStart(2, '0');
+    
 
     useEffect(() => {
         if(activeCycle) {
