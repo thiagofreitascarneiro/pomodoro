@@ -1,6 +1,7 @@
-import { ReactNode, createContext, useReducer, useState } from "react";
+import { ReactNode, createContext, useEffect, useReducer, useState } from "react";
 import { Cycle, cyclesReducer } from "../reducers/cycles/reducer";
-import { ActionTypes, addNewCycleAction, markCurrentCycleAsFinishedAction } from "../reducers/cycles/actions";
+import { ActionTypes, addNewCycleAction, interruptCurrentCycleAction, markCurrentCycleAsFinishedAction } from "../reducers/cycles/actions";
+import { differenceInSeconds } from "date-fns";
 
 interface CreateCycleData {
     task: string;
@@ -30,13 +31,32 @@ export function CyclesContextProvider({ children }:CyclesContextProviderProps) {
         {
         cycles: [],
         activeCycleId: null,
+    }, () => {
+        const storedStateAsJSON = localStorage.getIetem(
+            '@ignite-timer:cycles-state-1.0.0',
+            )
+        if (storedStateAsJSON) {
+            return JSON.parse(storedStateAsJSON)
+        }
     })
 
-    const [amountsSecondsPassed, setAmountsSecondsPassed] = useState(0);
-
     const { cycles, activeCycleId } = cyclesState;
+    const activeCycle = cycles.find((cycle: any) => cycle.id === activeCycleId);
 
-    const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId);
+    const [amountsSecondsPassed, setAmountsSecondsPassed] = useState(() => {
+       if (activeCycle) {
+            return differenceInSeconds(new Date(), 
+            new Date(activeCycle.startDate))
+       }
+        return 0
+    });
+
+    useEffect(() => {
+        const stateJson = JSON.stringify(cyclesState);
+
+        localStorage.setItem('@iginte-time:cycle-state-1.0.0', stateJson);
+    }, [cyclesState])
+    
 
     function setSecondsPassed(seconds: number) {
         setAmountsSecondsPassed(seconds)
@@ -64,12 +84,7 @@ export function CyclesContextProvider({ children }:CyclesContextProviderProps) {
 
     function interruptCurrentCycle() {
 
-        dispatch({
-            type: ActionTypes.INTERRUPT_CURRENT_CYCLE,
-            payload: {
-                activeCycleId,
-            }
-        });
+        dispatch(interruptCurrentCycleAction());
         
     }
 
