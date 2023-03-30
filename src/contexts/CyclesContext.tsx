@@ -45,9 +45,8 @@ export function CyclesContextProvider({ children }:CyclesContextProviderProps) {
 
     const [amountsSecondsPassed, setAmountsSecondsPassed] = useState(() => {
        if (activeCycle) {
-            return differenceInSeconds(new Date(), 
-            new Date(activeCycle.startDate))
-       }
+            return differenceInSeconds(new Date(),  new Date(activeCycle.startDate))
+        }
         return 0
     });
 
